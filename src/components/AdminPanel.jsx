@@ -43,7 +43,7 @@ export function AdminPanel({ onClose, onSave }) {
                 targetWords: targetArray,
                 trapWords: trapArray
             });
-        } catch (err) {
+        } catch (_) {
             setError('Invalid input format. Please use comma-separated values.');
         }
     };

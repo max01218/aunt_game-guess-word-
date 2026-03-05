@@ -3,8 +3,11 @@ import { useGameLogic } from './hooks/useGameLogic';
 import { WordGrid } from './components/WordGrid';
 import { LetterCircle } from './components/LetterCircle';
 import { AdminPanel } from './components/AdminPanel';
-import { Shuffle, Lightbulb, Trophy } from 'lucide-react';
-import { useState } from 'react';
+import { Shuffle, Lightbulb, Trophy, ListOrdered } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { StartScreen } from './components/StartScreen';
+import { Scoreboard } from './components/Scoreboard';
+import { saveScore } from './utils/db';
 
 function App() {
   const {
@@ -30,8 +33,28 @@ function App() {
   } = useGameLogic();
 
   const [showAdmin, setShowAdmin] = useState(false);
+  const [studentId, setStudentId] = useState('');
+  const [showScoreboard, setShowScoreboard] = useState(false);
+  const [scoreSaved, setScoreSaved] = useState(false);
 
   const isLevelComplete = foundWords.length === targetWords.length;
+
+  useEffect(() => {
+    if (isLevelComplete && !scoreSaved && studentId) {
+      saveScore(studentId, score);
+      setTimeout(() => setScoreSaved(true), 0);
+    }
+  }, [isLevelComplete, scoreSaved, studentId, score]);
+
+  const handleRestart = () => {
+    // Reset necessary game state via reload for simplicity as before, 
+    // but in a real app you'd add a reset method to useGameLogic.
+    window.location.reload();
+  };
+
+  if (!studentId) {
+    return <StartScreen onStart={setStudentId} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-950 flex flex-col font-sans overflow-hidden">
@@ -44,9 +67,18 @@ function App() {
             {streak > 2 && <span className="text-green-400">Streak: {streak}🔥</span>}
           </div>
         </div>
-        <div className="flex items-center gap-2 font-semibold bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-          <Trophy className="w-5 h-5 text-yellow-400" />
-          <span>{foundWords.length} / {targetWords.length}</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 font-semibold bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            <span>{foundWords.length} / {targetWords.length}</span>
+          </div>
+          <button
+            onClick={() => setShowScoreboard(true)}
+            className="p-2 bg-white/10 text-white rounded-full hover:bg-white/20 active:bg-white/30 transition shadow-lg backdrop-blur-sm"
+            aria-label="View Scoreboard"
+          >
+            <ListOrdered className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
@@ -56,7 +88,7 @@ function App() {
           <div
             className="h-full bg-orange-400 origin-left transition-all duration-500 ease-linear"
             style={{
-              width: `${Math.max(0, 100 - ((Date.now() - lastWordTime) / timeLimit) * 100)}%`
+              width: `${Math.max(0, 100 - ((new Date().getTime() - lastWordTime) / timeLimit) * 100)}%`
             }}
           />
         </div>
@@ -88,10 +120,16 @@ function App() {
               <p className="text-indigo-200 mb-2 relative z-10">You found all the words.</p>
               <p className="text-4xl font-black text-yellow-400 mb-6 drop-shadow-md relative z-10">Score: {score}</p>
               <button
-                onClick={() => window.location.reload()}
-                className="bg-white text-purple-900 font-bold px-8 py-3 rounded-full hover:bg-gray-100 transition shadow-lg w-full relative z-10"
+                onClick={handleRestart}
+                className="bg-white text-purple-900 font-bold px-8 py-3 rounded-full hover:bg-gray-100 transition shadow-lg w-full mb-4 relative z-10"
               >
                 Play Again
+              </button>
+              <button
+                onClick={() => setShowScoreboard(true)}
+                className="bg-purple-800/50 text-white font-bold px-8 py-3 rounded-full hover:bg-purple-700/50 transition shadow-lg w-full border border-purple-500/30 relative z-10"
+              >
+                View Scoreboard
               </button>
             </div>
           ) : (
@@ -158,6 +196,11 @@ function App() {
             setShowAdmin(false);
           }}
         />
+      )}
+
+      {/* Scoreboard Modal */}
+      {showScoreboard && (
+        <Scoreboard onClose={() => setShowScoreboard(false)} />
       )}
     </div>
   );

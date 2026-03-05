@@ -10,7 +10,6 @@ export function LetterCircle({ letters, currentPath, startDrawing, addLetterToPa
     const containerRef = useRef(null);
     const [positions, setPositions] = useState([]);
     const [pointerPos, setPointerPos] = useState(null);
-    const [isHovering, setIsHovering] = useState(false);
 
     // Calculate positions of letters in a circle
     useEffect(() => {
